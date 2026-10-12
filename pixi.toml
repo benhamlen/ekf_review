@@ -1,0 +1,16 @@
+[workspace]
+authors = ["ben hamlen <hamlen.ben@gmail.com>"]
+channels = ["conda-forge"]
+name = "ekf_review"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = ">=3.15.0,<3.16"
+numpy = ">=2.5.4,<3"
+matplotlib = ">=3.11.2,<4"
+
+[pypi-dependencies]
+viser = ">=1.1.1, <2"
