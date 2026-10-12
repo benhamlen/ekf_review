@@ -8,6 +8,11 @@ from numpy.typing import NDArray
 Vec = NDArray[np.float64]
 
 
+def subtract_residual(z: Vec, z_hat: Vec) -> Vec:
+    """Default z ⊟ ẑ for ordinary (non-angular) measurements."""
+    return z - z_hat
+
+
 @dataclass(frozen=True)
 class Control:
     """What the rover is *actually* doing (truth input). Estimator never sees this."""
@@ -43,7 +48,7 @@ class Measurement:
     R: Vec  # shape (m, m)
     h: Callable[[Vec], Vec]  # x -> predicted z, shape (m,)
     H: Callable[[Vec], Vec]  # x -> Jacobian, shape (m, n)
-    angle_idx: tuple[int, ...] = ()  # which components of z to wrap
+    residual: Callable[[Vec, Vec], Vec] = subtract_residual  # z ⊟ ẑ
     source: str = ""  # "star_tracker", "wheel", ... for logging/plots
 
 
@@ -60,6 +65,9 @@ class MotionModel(Protocol):
     def f(self, x: Vec, u: ProcessInput, dt: float) -> Vec: ...
     def F(self, x: Vec, u: ProcessInput, dt: float) -> Vec: ...
     def Q(self, x: Vec, u: ProcessInput, dt: float) -> Vec: ...
+    def boxplus(
+        self, x: Vec, dx: Vec
+    ) -> Vec: ...  # x ⊞ dx: apply a correction, keep x valid
 
 
 class Sensor(Protocol):
@@ -78,6 +86,13 @@ class UnicycleBiasModel:
         # HINT: constant Q for now so the refactor doesn't change behavior; Q(dt) comes later
         self._Q = Q
 
+    def boxplus(
+        self, x: Vec, dx: Vec
+    ) -> Vec:  # x ⊞ dx: apply a correction, keep x valid
+        x_new = x + dx # new array, so modifying it below doesn't touch x
+        x_new[2] = normalize_angle(x_new[2])
+        return x_new
+
 
     def f(self, x: Vec, u: ProcessInput, dt: float) -> Vec:
         # HINT: port get_f from ekf_review.py
@@ -90,7 +105,7 @@ class UnicycleBiasModel:
             [
                 px + v * np.cos(theta) * dt,
                 py + v * np.sin(theta) * dt,
-                theta + (u.gyro_z - bg) * dt,
+                normalize_angle(theta + (u.gyro_z - bg) * dt),
                 v,
                 bg,
             ]
@@ -126,50 +141,49 @@ class EKF:
         model: MotionModel,
         x0: Vec,
         P0: Vec,
-        angle_state_idx: tuple[int, ...] = (2,),
     ) -> None:
-        # HINT: store model, angle_state_idx
-        # HINT: store x0.copy() and P0.copy() -- avoids the aliasing bug from before
-        # HINT: cast to float (np.asarray(x0, dtype=float)) so integer inputs don't silently truncate
-
         self.model = model
-        self.x0 = x0
-        self.P0 = P0
-        self.angle_state_idx = angle_state_idx
-
-        self.x = x0.copy()
-        self.P = P0.copy()
+        self.x = np.asarray(x0, dtype=float).copy()
+        self.P = np.asarray(a=P0, dtype=float).copy()
 
     def predict(self, u: ProcessInput, dt: float) -> None:
-        # HINT: order matters -- compute F (and Q) from the CURRENT self.x *before* overwriting it
-        # HINT: then self.x = model.f(...), self.P = F P F^T + Q
-        # HINT: wrap every index in self.angle_state_idx with normalize_angle
-        # HINT: optional: re-symmetrize P = 0.5 * (P + P.T) to kill rounding drift
 
-        # i dont like how much this has
-        px, py, theta, v, bg = self.x
+        # save before updating state
+        F = self.model.F(self.x, u, dt)
+        Q = self.model.Q(self.x, u, dt)
 
-        # propagate state from dynamics and known control inputs
-        state_updated: NDArray[np.float64] = self.model.f(self.x, u, theta, v, bg, dt, gyro_z)
+        # propagate state (and uncertainty) from dynamics and known control inputs
+        self.x = self.model.f(self.x, u, dt)
+        self.P = F @ self.P @ F.T + Q
 
     def update(self, meas: Measurement) -> None:
-        # HINT: innovation y = meas.z - meas.h(self.x); shapes must both be (m,)
-        # HINT: wrap y[i] for i in meas.angle_idx (angles in measurement space, not state space)
-        # HINT: H = meas.H(self.x) -- evaluate at the PRIOR state, same x you used for h
-        # HINT: S = H P H^T + R;  K = solve(S, H P).T   (why .T works: P and S are symmetric)
-        # HINT: I = np.eye(len(self.x)) -- size from the state, not a hard-coded 5
-        # HINT: x += K y, then wrap self.angle_state_idx; P via Joseph form
-        # HINT: optional for later: return/store y and S -- needed for NIS consistency checks
-        ...
+
+        # innovation: actual measurement minus predicted measurement h(x)
+        y = meas.residual(meas.z, meas.h(self.x))
+
+        # measurement Jacobian at the prior state
+        H: Vec = meas.H(self.x)
+
+        # innovation covariance: state uncertainty mapped through H, plus sensor noise
+        S_innov: Vec = H @ self.P @ H.T + meas.R
+
+        # Kalman gain K = P H^T S^-1, via solve() instead of an explicit inverse
+        K: Vec = np.linalg.solve(S_innov, H @ self.P).T
+
+        # state update
+        self.x = self.model.boxplus(self.x, K @ y)
+
+        # covariance update, Joseph form (stays symmetric PSD under rounding)
+        I_KH: Vec = np.eye(len(self.x)) - K @ H
+        self.P = I_KH @ self.P @ I_KH.T + K @ meas.R @ K.T
 
     def snapshot(self, t: float) -> EstimateSnapshot:
         # HINT: EstimateSnapshot(t, self.x.copy(), self.P.copy()) -- copies, or history entries change later
-        ...
+        return EstimateSnapshot(t, self.x.copy(), self.P.copy())
 
 
-def normalize_angle(theta: float) -> float:
-    # HINT: copy from ekf_review.py
-    ...
+def normalize_angle[T: (float, Vec)](theta: T) -> T:
+    return (theta + np.pi) % (2 * np.pi) - np.pi
 
 
 def heading_measurement(t: float, theta_meas: float, sigma: float) -> Measurement:
@@ -177,10 +191,26 @@ def heading_measurement(t: float, theta_meas: float, sigma: float) -> Measuremen
         t=t,
         z=np.array([theta_meas]),  # what the sensor read
         R=np.array([[sigma**2]]),
-        h=lambda x: np.array(
-            [x[2]]
-        ),  # IS ONLY ELEMENT 2 (non-includive upper bound) what it *should* read given state x: theta, as a length-1 array
+        h=lambda x: np.array([x[2]]),  # predicted heading = theta, as shape (1,)
         H=lambda x: np.array([[0.0, 0.0, 1.0, 0.0, 0.0]]),  # d h / d x (constant here)
-        angle_idx=(0,),  # z[0] is an angle -> wrap the innovation
+        residual=lambda z, z_hat: normalize_angle(z - z_hat),
         source="star_tracker",
     )
+
+if __name__ == "__main__":
+
+    x0 = np.array([0.0, 0.0, 0.0, 1.0, 0.0])
+    P0 = np.eye(x0.shape[0]) # HELP Cannot subscript object of type `int` with no `__getitem__` method
+    Q = np.diag([0.001, 0.001, 0.0001, 0.01, 0.00001])
+
+    gyro_rate = 0.1 # rad/s
+    dt = 0.1 # s
+
+    measurement = heading_measurement(t=dt, theta_meas=0.2, sigma=0.1)   # sigma=0.1 -> R = 0.01, same as the original test
+    uni_bias_model = UnicycleBiasModel(Q)
+    ekf = EKF(uni_bias_model, x0, P0)
+
+    ekf.predict(ProcessInput(t=dt, gyro_z=gyro_rate), dt)
+    ekf.update(measurement)
+
+    np.testing.assert_allclose(ekf.x, [0.1, 0.01862562, 0.19813744, 1.0, -0.01862562], atol=1e-7)

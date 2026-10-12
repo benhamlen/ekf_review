@@ -69,18 +69,19 @@ ControlSource ──u──▶ World (truth) ──truth──▶ Sensors ──
 | # | Step | Owner | Interview payoff | Est. | Status |
 |---|---|---|---|---|---|
 | 0 | Verify Viser installs under pixi — viser 1.1.1 on Py 3.15 OK; server, slider, point cloud, `add_plotly`/`add_uplot` all work | C | Kill tooling risk early | 10m | ✅ |
-| 1 | Dataclasses: `Control(v, ω)`, `TruthState`, `Measurement(z, R, h, H, angle_idx)` — sketch, then review | B | "Every sensor reduces to z, h(x), R" — loose coupling; DEM registration = just another sensor | 20m | ⬜ |
-| 2 | `EKF` class: `predict(u, dt)`, generic `update(meas)` (innovation `z − h(x)`, wrap by `angle_idx`, H at x) | B | Nonlinear measurements; registration poses, landmark ranges | 30m | ⬜ |
-| 3 | `World` (online truth integration from `ControlSource(t)`) + `Sensor`s with own rate/noise → `Measurement \| None` | B | Mirrors ROS node split; time-varying ω; truth ≠ filter integrator | 30m | ⬜ |
-| 4 | Regression: port loop, confirm DR radius ≈ 8.33 m and EKF tracks truth | B | "Refactored without behavior change, and here's how I checked" | 10m | ⬜ |
+| 1 | Dataclasses: `Control(v, ω)`, `TruthState`, `ProcessInput`, `Measurement(z, R, h, H, residual)`, `EstimateSnapshot`, Protocols (`MotionModel`, `Sensor`, `ControlSource`) | B | "Every sensor reduces to z, h(x), R" — loose coupling; DEM registration = just another sensor | 20m | ✅ |
+| 2 | `EKF` class: `predict(u, dt)`, generic `update(meas)`; angles via model `boxplus` (x ⊞ δ) + measurement `residual` (z ⊟ ẑ) — no angle logic in EKF; single-step regression test passes | B | Nonlinear measurements; ⊞/⊟ form extends to SO(3) star-tracker attitude | 30m | ✅ |
+| 3 | `World` (online truth integration from `ControlSource(t)`) + `Sensor`s with own rate/noise → `Measurement \| None` | C | Mirrors ROS node split; time-varying ω; truth ≠ filter integrator | 30m | ✅ `sim.py` |
+| 4 | Regression: port loop, confirm DR radius ≈ 8.33 m and EKF tracks truth | C | "Refactored without behavior change, and here's how I checked" | 10m | ✅ truth R=10.000, DR R=8.339 (exp. 8.333), EKF final err 0.014 m vs DR 16.3 m |
 | 5 | `History` + evaluation: heading err ±3σ, bias vs truth, position err, NEES | B (math), C (plots) | **Highest value:** consistency, bias observability, unbounded position error without position fixes | 45m | ⬜ |
-| 6 | Viser front end: trails, heading arrows, 3σ ellipse; sliders for ω, bias, σ_gyro, σ_heading, update rate; reset | C (scaffold), B (wiring) | Live demo: "drop the update rate, watch P grow" | 1h | ⬜ |
+| 6 | Viser front end: trails, heading arrows, 3σ ellipse; sliders for ω, bias, σ_gyro, σ_heading, update rate; reset | C (scaffold), B (wiring) | Live demo: "drop the update rate, watch P grow" | 1h | 🔄 `viz_viser.py` scaffold done (trails, arrows, 3σ ellipses, update stars, playback speed); sliders for sim params pending |
 
 **Cut line:** 1–5 are must-haves. 6 can shrink to sliders + 2D trail.
 
 ---
 
 ## Open questions / predictions to check
+- Bias estimate ends at 0.0162 vs true 0.02 after 120 s — is that inside its 3σ? (check in step 5; likely Q on bias + heading-only observability)
 - Does EKF position error stay bounded with heading-only updates? (Prediction before plotting.)
 - How fast does the bias estimate converge, and how does that depend on σ_heading and update rate?
 - Is the filter consistent with the current hand-tuned `Q`? (NEES should land in its χ² bounds.)
