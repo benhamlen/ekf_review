@@ -1,0 +1,18 @@
+# Parameters for ekf_loc nodes. Values are starting points, not tuned.
+ekf_node:
+  ros__parameters:
+    use_sim_time: true
+    odom_frame: odom
+    base_frame: base_footprint_ekf     # NOT base_footprint: ground_truth_tf.py already publishes odom->base_footprint
+    publish_tf: true
+    sigma_wheel_speed: 0.05            # m/s
+    sigma_heading: 0.005               # rad (must match fake_star_tracker for a consistent filter)
+    process_noise_diag: [1.0e-4, 1.0e-4, 1.0e-5, 1.0e-3, 1.0e-7]   # per IMU step: x, y, theta, v, b_g
+    initial_cov_diag: [0.01, 0.01, 0.01, 0.1, 1.0e-4]
+
+fake_star_tracker:
+  ros__parameters:
+    use_sim_time: true
+    rate_hz: 1.0
+    sigma_heading: 0.005
+    seed: 42

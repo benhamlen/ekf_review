@@ -75,6 +75,19 @@ The email confirms **ROS 2 + Python**, **system design**, and a **presentation**
 
 **Dropped / deferred:** Viser parameter sliders, wheel-slip sim, Phase 4 extras. Don't polish the playground further.
 
+### Monday-night triage (energy-limited; ~75 min, then sleep)
+| # | Block | Time | Status |
+|---|---|---|---|
+| 1 | Fix `sigmas` (`np.sqrt`, not `**2`), rerun `plot_eval.py`, commit + push | 10m | ⬜ |
+| 2 | **ROS smoke test:** read `ros2_template/README.md`, copy into `~/rover_ws/src`, build, run `ros2 launch ekf_loc ekf_loc.launch.py` against the Gazebo sim, check in RViz | 30m | ⬜ (template ✅ builds + passes fake-input test) |
+| 3 | Talk through `docs/SYSTEM_DESIGN.md` **out loud**, 5-min timer | 15m | ⬜ |
+| 4 | Skim `docs/PRESENTATION_TEMPLATE.md`; rehearse 2–3 of the "likely questions" | 10m | ⬜ |
+| 5 | Sleep — arrive 11 AM fresh | — | ⬜ |
+
+**Skipped, with fallbacks:** Q/NEES experiment (result + explanation already in hand: NEES ≈ 0.18 → Q too conservative, mainly unobserved v); DEM-registration code (concepts in `REFERENCE.md` §5, `REFERENCE_3D.md` §7); full 3h ROS drill (replaced by template + smoke test).
+
+**Day-of:** ask at the start whether personal notes / LLM use are OK; keep `ONSITE_LOG.md`; code freeze 60–90 min before presenting.
+
 ---
 
 ## Phase 3 detail — Playground refactor

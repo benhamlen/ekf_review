@@ -32,6 +32,7 @@ ControlSource ──Control──▶ World ──TruthState──▶ Sensors ─
 | `plot_eval.py` | **Static plots:** heading error ±3σ, bias convergence, position error (log scale), NEES vs χ² bounds → `eval.png` |
 | `viz_viser.py` | **Live viewer** (Viser, http://localhost:8080): trails, heading arrows, 3σ ellipses, update markers, playback speed |
 | `ekf_review.py` | The original procedural version, kept as a reference |
+| `ros2_template/ekf_loc/` | ROS 2 Jazzy package wrapping the EKF (`ekf_node`, `fake_star_tracker`, params, launch). See its README |
 | `docs/` | Plan, reference sheets, this document |
 
 Run:

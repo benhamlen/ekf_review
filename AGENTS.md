@@ -7,6 +7,15 @@ This file gives you background. **It does not override the task you're given.** 
 - Confirmed format: a programming task using **ROS 2 (Jazzy) with Python**, a **system design task**, and an end-of-day **presentation to the whole team** on what was done, why, and what worked and what didn't.
 - Everything Ben produces today will be presented and defended by him personally. **He must understand every line.** Favor clear, conventional code and short explanations over clever or large generated solutions. Be explicit about assumptions vs. confirmed facts.
 
+## The presentation shapes how we work all day
+The day ends with Ben **presenting to the whole team** and taking questions on what he built, why, what worked and what didn't, and what he'd do next. **Optimize the day's outputs for that moment**, not just for working code:
+- **Make the reasoning visible.** When there's a real design choice (filter vs smoother, loose vs tight coupling, state choice, frames, 2D vs 3D, tuning), briefly lay out the options and tradeoffs and let Ben decide. He has to defend the decision, so it should be his.
+- **Keep a running decision log** in the onsite project, e.g. `ONSITE_LOG.md`, if Ben agrees. Record each decision, the alternatives considered, assumptions (confirmed vs assumed), results with numbers, failures and their root causes, and open questions. This becomes the skeleton of the presentation (see `docs/PRESENTATION_TEMPLATE.md`).
+- **Prefer results that can be explained and measured:** baselines (e.g. dead reckoning), error with ±3σ, NEES/NIS, a plot or two. A failed approach with a clear diagnosis is presentable; unexplained magic isn't.
+- **Check his understanding of what you generate.** After producing non-trivial code or math, give him a two-line summary of what it does and the one question an interviewer is most likely to ask about it.
+- **Flag likely interview questions** as they come up: failure modes, observability, degeneracy, scaling to 3D, what changes on real hardware.
+- **Watch the clock.** Leave time near the end to stop building, assemble plots and numbers, and rehearse. Suggest a code freeze about 60–90 minutes before the presentation.
+
 ## About Ben
 - Robotics engineer with an MS. Background in perception, stereo visual odometry, geometric CV, camera calibration, point-cloud registration (John Deere autonomy), plus flight software, autonomy, embedded and real-time systems (Inversion Space).
 - Fluent in Python, NumPy, SciPy, OpenCV, C++, Rust, ROS tooling, Rerun.
@@ -29,6 +38,8 @@ This file gives you background. **It does not override the task you're given.** 
 - `viz_viser.py`: live Viser viewer.
 - `docs/PLAN.md`: prep plan and the talking points he collected.
 - `docs/ARCHITECTURE.md` (repo structure), `docs/ADDING_SENSORS.md` (sensor recipe + tested examples), `docs/ROS2_INTEGRATION.md` (ROS mapping + local workspace notes), `docs/SYSTEM_DESIGN.md` (design strawman). Index: `docs/README.md`.
+- `ros2_template/ekf_loc/`: **known-good ROS 2 Jazzy ament_python package** wrapping the EKF (Imu→predict, wheel odom + star-tracker heading updates, Odometry + TF out, params YAML, launch). Builds with colcon; a good starting point if the task is a localization node. Build with system Python, not pixi.
+- `docs/PRESENTATION_TEMPLATE.md`: outline for the end-of-day talk.
 - Environment: pixi (`pixi run python ...`), Python 3.15, numpy, scipy, matplotlib, viser.
 
 Reusing pieces (EKF class, evaluation, viewer) is fine if it fits the onsite task. Don't force them in if it doesn't.
