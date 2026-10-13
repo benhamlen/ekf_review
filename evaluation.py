@@ -40,7 +40,7 @@ def sigmas(est_hist: list[EstimateSnapshot]) -> Vec:
 
     HINT: np.diagonal works on a stacked (N, 5, 5) array with axis1=1, axis2=2.
     """
-    return np.array([np.diagonal(state_est.P)**2 for state_est in est_hist])
+    return np.array([np.sqrt(np.diagonal(state_est.P)) for state_est in est_hist])
 
 
 def nees(errors: Vec, est_hist: list[EstimateSnapshot]) -> Vec:
