@@ -9,6 +9,7 @@
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How this repo's code is structured: types, Protocols, components, data flow, extension points, limitations |
 | [ROS2_INTEGRATION.md](ROS2_INTEGRATION.md) | Mapping this EKF onto ROS 2 nodes, what exists in the local rover workspace, practice plan, pitfalls |
 | [SYSTEM_DESIGN.md](SYSTEM_DESIGN.md) | Strawman lunar-rover localization design: clarifying questions, architecture, sensor roles, decisions, fault handling, validation |
+| [ONSITE_LOG.md](ONSITE_LOG.md) | Day-of running log: task, assumptions, timestamped decisions/results, presentation material |
 | [PRESENTATION_TEMPLATE.md](PRESENTATION_TEMPLATE.md) | Fill-in outline for the end-of-day talk (what / why / worked / didn't / next), timing, likely questions |
 | [../ros2_template/README.md](../ros2_template/README.md) | Known-good `rclpy` EKF package (node, fake star tracker, params, launch) — copy and adapt |
 
