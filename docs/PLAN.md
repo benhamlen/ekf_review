@@ -1,7 +1,13 @@
 # Starpath Onsite Prep — Plan & Tracker
 
-**Onsite:** Tue Oct 13, 2026 — Senior Robotics SWE, Lunar Rover Localization (all-day project + presentation).
-Exercise topics are *hypotheses*, not confirmed: EKF fusion, ROS 2 localization nodes, LiDAR↔orbital-DEM registration, drift correction, accuracy/uncertainty/failure-mode evaluation.
+**Onsite:** Tue Oct 13, 2026, arrive ~11 AM — Senior Robotics SWE, Lunar Rover Localization.
+
+**Confirmed format (from the invite email):**
+- Tour, then a day-long task "representative of a task you would do if hired."
+- **A programming task using ROS 2 with Python** and **a system design task.**
+- End of day: **presentation to the entire group** — what you did, why, what worked and what didn't.
+
+Topic guesses are still *hypotheses*: EKF fusion, ROS 2 localization nodes, LiDAR↔orbital-DEM registration, drift correction, accuracy/uncertainty/failure-mode evaluation.
 
 **The sentence to be able to say on Tuesday:**
 > "I built a modular, sensor-agnostic EKF, validated it against ground truth with consistency checks, and can show interactively how each noise source and sensor affects the estimate — and how terrain registration plugs in as just another measurement."
@@ -13,7 +19,7 @@ Exercise topics are *hypotheses*, not confirmed: EKF fusion, ROS 2 localization 
 | Day | Focus | Status |
 |---|---|---|
 | Sun Oct 11 | EKF math + standalone sim → playground refactor → wheel odom / global fixes → DEM registration | 🔄 in progress |
-| Mon Oct 12 | ROS 2 Jazzy integration with existing lunar rover sim, evaluation, practice explaining | ⬜ |
+| Mon Oct 12 | Revised after invite email — see "Monday plan" below | 🔄 |
 | Tue Oct 13 | Onsite | ⬜ |
 
 ### Phase 1 — EKF fundamentals ✅
@@ -51,6 +57,23 @@ Exercise topics are *hypotheses*, not confirmed: EKF fusion, ROS 2 localization 
 - [ ] Global registration node → `map → odom` correction (no conflicting TF publishers)
 - [ ] Evaluation vs sim ground truth; RViz / Foxglove / Rerun
 - [ ] Practice the end-of-day presentation: approach, results, tradeoffs, failure modes
+
+---
+
+## Monday plan (revised to match the invite)
+
+The email confirms **ROS 2 + Python**, **system design**, and a **presentation**. Shift effort from playground polish toward those three. Time-boxed, in order:
+
+| # | Block | Why (maps to invite) | Time | Status |
+|---|---|---|---|---|
+| 1 | Finish step 5 (`evaluation.py`) + one NEES-driven `Q` experiment | Evaluation + "what worked / what didn't" evidence | 1h | 🔄 |
+| 2 | **ROS 2 Python drill**: inspect lunar-sim workspace; wrap the EKF in an `rclpy` node — sub `sensor_msgs/Imu` → predict, sub heading/other → update, pub `nav_msgs/Odometry` + TF `odom→base_link`; params YAML; launch file; compare to sim ground truth; `ros2 bag` | **Programming task** — be fast at rclpy boilerplate, QoS, TF2, launch | 3h | ⬜ |
+| 3 | **System design prep**: one-page lunar-rover localization architecture (sensors, frames, rates, fault handling, compute, comms latency, bootstrapping absolute position) — practice talking it through in 5 min | **System design task** | 1.5h | ⬜ |
+| 4 | DEM registration — concept-level, plus a toy `least_squares` fit + covariance/degeneracy check if time remains | Likely topic; strong design-discussion material | 1h | ⬜ |
+| 5 | Presentation skeleton + one dry run | **End-of-day presentation** | 30m | ⬜ |
+| 6 | Reference sheet (`REFERENCE.md`) + agent context (`AGENTS.md`) | Day-of lookup | — | ✅ (C) |
+
+**Dropped / deferred:** Viser parameter sliders, wheel-slip sim, Phase 4 extras. Don't polish the playground further.
 
 ---
 
